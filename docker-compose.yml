@@ -1,0 +1,118 @@
+version: '3.8'
+
+services:
+  # Broker 1
+  kafka1:
+    image: confluentinc/cp-kafka:7.7.1
+    user: "0:0"
+    container_name: kafka1
+    hostname: kafka1
+    ports:
+      - "9092:9092"   # PLAINTEXT
+      - "9093:9093"   # CONTROLLER
+    environment:
+      CLUSTER_ID: "Z0f4aV1hS2i3j4k5l6m7n8o9p0q"  # Substitua por um UUID gerado
+      KAFKA_KRAFT_MODE: "true"
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka1:9093,2@kafka2:9093,3@kafka3:9093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://192.168.18.57:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      # Retenção padrão para todos os tópicos criados sem configuração específica
+      KAFKA_LOG_RETENTION_MS: 604800000   # 7 dias em milissegundos
+    volumes:
+      - ./data/kafka1:/var/lib/kafka/data
+    networks:
+      - kafka-network
+
+  # Broker 2
+  kafka2:
+    image: confluentinc/cp-kafka:7.7.1
+    user: "0:0"
+    container_name: kafka2
+    hostname: kafka2
+    ports:
+      - "9094:9092"   # PLAINTEXT
+      - "9095:9093"   # CONTROLLER
+    environment:
+      CLUSTER_ID: "Z0f4aV1hS2i3j4k5l6m7n8o9p0q"  # Mesmo UUID do kafka1
+      KAFKA_KRAFT_MODE: "true"
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka1:9093,2@kafka2:9093,3@kafka3:9093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://192.168.18.57:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      # Retenção padrão para todos os tópicos criados sem configuração específica
+      KAFKA_LOG_RETENTION_MS: 604800000   # 7 dias em milissegundos
+    volumes:
+      - ./data/kafka2:/var/lib/kafka/data
+    networks:
+      - kafka-network
+
+  # Broker 3
+  kafka3:
+    image: confluentinc/cp-kafka:7.7.1
+    user: "0:0"
+    container_name: kafka3
+    hostname: kafka3
+    ports:
+      - "9096:9092"   # PLAINTEXT
+      - "9097:9093"   # CONTROLLER
+    environment:
+      CLUSTER_ID: "Z0f4aV1hS2i3j4k5l6m7n8o9p0q"  # Mesmo UUID do kafka1
+      KAFKA_KRAFT_MODE: "true"
+      KAFKA_NODE_ID: 3
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka1:9093,2@kafka2:9093,3@kafka3:9093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://192.168.18.57:9096
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      # Retenção padrão para todos os tópicos criados sem configuração específica
+      KAFKA_LOG_RETENTION_MS: 604800000   # 7 dias em milissegundos
+    volumes:
+      - ./data/kafka3:/var/lib/kafka/data
+    networks:
+      - kafka-network
+
+  # Kafka UI
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    container_name: kafka-ui
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local-kraft
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: 192.168.18.57:9096,192.168.18.57:9094,192.168.18.57:9092
+      AUTH_TYPE: LOGIN_FORM
+      SPRING_SECURITY_USER_NAME: admin
+      SPRING_SECURITY_USER_PASSWORD: admin
+    networks:
+      - kafka-network
+
+networks:
+  kafka-network:
+    driver: bridge
